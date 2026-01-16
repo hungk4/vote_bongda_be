@@ -7,14 +7,16 @@ require('dotenv').config();
 const app = express();
 app.use(express.json());
 // app.use(cors());
+
 app.use(cors({
     origin: [
-        "http://localhost:5173",                  
-        process.env.BE_API_BASE,      
+        "http://localhost:5173",                   
+        "https://vote-bongda-fe.vercel.app"        
     ],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Cho phép các hành động này
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
 }));
+
 
 // --- CẤU HÌNH ---
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
