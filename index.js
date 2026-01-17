@@ -30,6 +30,7 @@ mongoose.connect(process.env.MONGODB)
 const PlayerSchema = new mongoose.Schema({
     name: String,
     hasPaid: { type: Boolean, default: false },
+    team: { type: String, default: null },
     createdAt: { type: Date, default: Date.now } 
 });
 const Player = mongoose.model('Player', PlayerSchema);
@@ -91,6 +92,34 @@ app.post('/api/login', (req, res) => {
     } else {
         res.status(401).json({ success: false, message: "Sai mật khẩu" });
     }
+});
+
+// API Chia đội hình (Admin gọi)
+app.put('/players/split', async (req, res) => {
+  const { adminPass, teamA_Ids, teamB_Ids } = req.body;
+
+    // Check mật khẩu
+    if (adminPass !== ADMIN_PASSWORD) {
+        return res.status(401).json({ error: 'Sai mật khẩu Admin!' });
+    }
+
+  try {
+    // Reset toàn bộ về null trước
+    await Player.updateMany({}, { team: null });
+
+    // Update Team A
+    if (teamA_Ids.length > 0) {
+        await Player.updateMany({ _id: { $in: teamA_Ids } }, { team: 'A' });
+    }
+    // Update Team B
+    if (teamB_Ids.length > 0) {
+        await Player.updateMany({ _id: { $in: teamB_Ids } }, { team: 'B' });
+    }
+
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 const PORT = 5000;
