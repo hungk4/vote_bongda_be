@@ -95,7 +95,7 @@ app.post('/api/login', (req, res) => {
 });
 
 // API Chia đội hình (Admin gọi)
-app.put('/players/split', async (req, res) => {
+app.put('/api/players/split', async (req, res) => {
   const { adminPass, teamA_Ids, teamB_Ids } = req.body;
 
     // Check mật khẩu
