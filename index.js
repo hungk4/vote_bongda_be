@@ -30,6 +30,7 @@ const PlayerSchema = new mongoose.Schema({
   name: String,
   hasPaid: { type: Boolean, default: false },
   team: { type: String, default: null },
+  clientId: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 const Player = mongoose.model("Player", PlayerSchema);
@@ -50,10 +51,56 @@ app.get("/api/players", async (req, res) => {
 
 // 2. Vote/Thêm tên (Ai cũng thêm được)
 app.post("/api/players", async (req, res) => {
-  if (!req.body.name) return res.status(400).json({ message: "Cần nhập tên" });
-  const newPlayer = new Player({ name: req.body.name });
+  const { name, clientId } = req.body; // Nhận thêm clientId
+
+  if (!name) return res.status(400).json({ message: "Cần nhập tên" });
+
+  // Kiểm tra xem tên này đã tồn tại chưa
+  const existingName = await Player.findOne({ name });
+  if (existingName) {
+    return res.status(400).json({
+      message: "Tên này đã được đăng ký rồi! Vui lòng chọn tên khác.",
+    });
+  }
+
+  // Kiểm tra xem máy này đã vote chưa
+  if (clientId) {
+    const existing = await Player.findOne({ clientId });
+    if (existing) {
+      return res.status(400).json({
+        message: "Máy này đã đăng ký rồi! Vui lòng hủy trước khi đăng ký lại.",
+      });
+    }
+  }
+
+  const newPlayer = new Player({ name, clientId });
   await newPlayer.save();
   res.json(newPlayer);
+});
+
+// [API] Kiểm tra trạng thái máy này đã vote chưa
+app.get("/api/players/check-status", async (req, res) => {
+  const { clientId } = req.query;
+
+  if (!clientId) return res.json({ hasVoted: false });
+
+  const player = await Player.findOne({ clientId });
+
+  res.json({ hasVoted: !!player });
+});
+
+// [API] Hủy tham gia (Dành cho User)
+app.post("/api/players/unvote", async (req, res) => {
+  const clientId = req.body.clientId;
+
+  if (!clientId) return res.status(400).json({ message: "Lỗi Client ID" });
+
+  const result = await Player.findOneAndDelete({ clientId });
+  if (result) {
+    res.json({ success: true, message: "Đã hủy tham gia" });
+  } else {
+    res.status(404).json({ message: "Bạn chưa tham gia!" });
+  }
 });
 
 // 3. Tick tiền (CHỈ ADMIN - Cần password)
