@@ -51,11 +51,16 @@ app.get("/api/players", async (req, res) => {
 
 // 2. Vote/Thêm tên (Ai cũng thêm được)
 app.post("/api/players", async (req, res) => {
-  const { name, clientId } = req.body; // Nhận thêm clientId
+  const { name, clientId } = req.body;
 
   if (!name) return res.status(400).json({ message: "Cần nhập tên" });
 
-  // Kiểm tra xem tên này đã tồn tại chưa
+  if (name.length > 25) {
+    return res
+      .status(400)
+      .json({ message: "Tên không được vượt quá 25 ký tự" });
+  }
+
   const existingName = await Player.findOne({ name });
   if (existingName) {
     return res.status(400).json({
@@ -63,7 +68,6 @@ app.post("/api/players", async (req, res) => {
     });
   }
 
-  // Kiểm tra xem máy này đã vote chưa
   if (clientId) {
     const existing = await Player.findOne({ clientId });
     if (existing) {
